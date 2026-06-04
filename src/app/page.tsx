@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/session";
 import { ServiceBrowser } from "@/components/ServiceBrowser";
+import { catalogService } from "@/modules/services/catalog.service";
 
 const platforms = [
   { name: "YouTube", short: "YT", className: "youtube" },
@@ -110,7 +111,10 @@ const faqs = [
 ];
 
 export default async function Home() {
-  const user = await getCurrentUser();
+  const [user, services] = await Promise.all([
+    getCurrentUser(),
+    catalogService.listByPlatform().catch(() => []),
+  ]);
 
   return (
     <main>
@@ -144,7 +148,7 @@ export default async function Home() {
 
       <PaymentStrip />
       <PopularServices />
-      <AllServices />
+      <AllServices services={services} />
       <Advantages />
       <FaqSection />
       <Footer />
@@ -243,13 +247,17 @@ function PopularServices() {
   );
 }
 
-function AllServices() {
+function AllServices({
+  services,
+}: {
+  services: Awaited<ReturnType<typeof catalogService.listByPlatform>>;
+}) {
   return (
     <section className="section allServices" id="all-services">
       <div className="sectionHeader">
         <h2>All Services</h2>
       </div>
-      <ServiceBrowser />
+      <ServiceBrowser initialServices={services} />
     </section>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AtSign,
   BarChart3,
@@ -47,22 +47,10 @@ function iconFor(name: string) {
   return iconMatchers.find((item) => item.pattern.test(name))?.icon ?? ThumbsUp;
 }
 
-export function ServiceBrowser() {
+export function ServiceBrowser({ initialServices }: { initialServices: Service[] }) {
   const [activePlatform, setActivePlatform] = useState("Instagram");
-  const [services, setServices] = useState<Service[]>(fallbackServices);
-  const [loadedFromDb, setLoadedFromDb] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/services")
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: { services?: Service[] } | null) => {
-        if (data?.services?.length) {
-          setServices(data.services);
-          setLoadedFromDb(true);
-        }
-      })
-      .catch(() => undefined);
-  }, []);
+  const loadedFromDb = initialServices.length > 0;
+  const services = loadedFromDb ? initialServices : fallbackServices;
 
   const visibleServices = useMemo(
     () => services.filter((service) => service.platform === activePlatform),
