@@ -180,6 +180,14 @@ export const catalogService = {
     return rows.map(mapService);
   },
 
+  async findById(id: number): Promise<SmmService | null> {
+    const [rows] = await getMysqlPool().query<ServiceRow[]>(
+      "SELECT * FROM services WHERE id = ? AND is_active = 1 LIMIT 1",
+      [id],
+    );
+    return rows[0] ? mapService(rows[0]) : null;
+  },
+
   async syncFromAmazingSmm() {
     const rawServices = await amazingSmmApi.listServices();
     const selectedServices = selectLowestPricedServices(rawServices);

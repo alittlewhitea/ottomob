@@ -93,7 +93,7 @@ export function ServiceBrowser() {
         {visibleServices.map((service) => {
           const Icon = iconFor(service.name);
           return (
-            <a href="#services" key={`${service.platform}-${service.id}`}>
+            <a href={loadedFromDb ? `/services/${service.id}` : "#services"} key={`${service.platform}-${service.id}`}>
               <Icon size={28} />
               <span>{service.name}</span>
               <small>

@@ -13,6 +13,7 @@ export type User = {
   avatarUrl: string | null;
   googleId: string | null;
   role: UserRole;
+  balance: number;
 };
 
 type UserRow = RowDataPacket & {
@@ -23,6 +24,7 @@ type UserRow = RowDataPacket & {
   avatar_url: string | null;
   google_id: string | null;
   role: UserRole;
+  balance: string;
 };
 
 function mapUser(row: UserRow): User {
@@ -34,6 +36,7 @@ function mapUser(row: UserRow): User {
     avatarUrl: row.avatar_url,
     googleId: row.google_id,
     role: row.role,
+    balance: Number(row.balance),
   };
 }
 
