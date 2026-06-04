@@ -85,6 +85,11 @@ export function OrderForm({ service }: { service: SmmService }) {
       </div>
 
       {message && <p className="formMessage">{message}</p>}
+      {message.toLowerCase().includes("insufficient") && (
+        <a className="softButton accountSoftButton" href="/funds">
+          Add Funds
+        </a>
+      )}
 
       <button className="primaryCta compact" disabled={loading} type="submit">
         {loading ? "Creating order" : "Create Pending Order"}

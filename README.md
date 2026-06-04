@@ -66,6 +66,57 @@ location / {
 
 第三阶段暂不扣余额、不接真实支付、不提交 AmazingSMM。真实支付和供应商下单会在后续阶段接入。
 
+## 第四阶段功能
+
+已接入 Stripe Checkout 作为唯一充值方式，并完善余额消费订单流程。
+
+当前资金和订单流程：
+
+1. 用户在 `/funds` 选择充值金额。
+2. 服务端创建 Stripe Checkout Session。
+3. Stripe 支付成功后调用 webhook：`/api/payments/stripe/webhook`。
+4. Webhook 将充值记录标记为 `paid`，并增加用户余额。
+5. 用户创建订单时，系统检查余额。
+6. 余额足够则扣款、写入余额流水，并创建 `pending / paid` 本地订单。
+7. AmazingSMM 真实下单仍保留到下一阶段。
+
+### Stripe 环境变量
+
+```env
+PAYMENT_PROVIDER=stripe
+STRIPE_SECRET_KEY=sk_live_or_test_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+STRIPE_CURRENCY=usd
+```
+
+Stripe Dashboard Webhook endpoint:
+
+```text
+https://ottomob.com/api/payments/stripe/webhook
+```
+
+建议监听事件：
+
+```text
+checkout.session.completed
+checkout.session.expired
+```
+
+### 线上数据库迁移
+
+已上线旧版本时，需要执行第四阶段迁移：
+
+```bash
+cd /www/wwwroot/ottomob.com
+mysql -u 数据库用户 -p 数据库名 < database/migrations/2026-06-04-stripe-wallet.sql
+```
+
+迁移会新增：
+
+- `orders.payment_status`
+- `recharges`
+- `wallet_transactions`
+
 ### MySQL 初始化
 
 在宝塔 MySQL 中创建数据库和用户后，导入：

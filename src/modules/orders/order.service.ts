@@ -1,4 +1,4 @@
-import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { getMysqlPool } from "@/lib/db/mysql";
 import { catalogService } from "@/modules/services/catalog.service";
 
@@ -13,6 +13,7 @@ export type Order = {
   link: string;
   quantity: number;
   charge: number;
+  paymentStatus: "unpaid" | "paid" | "refunded";
   status: OrderStatus;
   createdAt: string;
 };
@@ -26,8 +27,14 @@ type OrderRow = RowDataPacket & {
   link: string;
   quantity: number;
   charge: string;
+  payment_status: "unpaid" | "paid" | "refunded";
   status: OrderStatus;
   created_at: Date;
+};
+
+type UserBalanceRow = RowDataPacket & {
+  id: number;
+  balance: string;
 };
 
 function mapOrder(row: OrderRow): Order {
@@ -40,6 +47,7 @@ function mapOrder(row: OrderRow): Order {
     link: row.link,
     quantity: row.quantity,
     charge: Number(row.charge),
+    paymentStatus: row.payment_status,
     status: row.status,
     createdAt: row.created_at.toISOString(),
   };
@@ -51,6 +59,36 @@ export function calculateOrderCharge(rate: number, quantity: number) {
 
 function isValidQuantity(quantity: number, min: number, max: number, step: number) {
   return quantity >= min && quantity <= max && (quantity - min) % step === 0;
+}
+
+async function debitUserBalanceForOrder(
+  connection: PoolConnection,
+  userId: number,
+  charge: number,
+) {
+  const [userRows] = await connection.query<UserBalanceRow[]>(
+    "SELECT id, balance FROM users WHERE id = ? FOR UPDATE",
+    [userId],
+  );
+  const user = userRows[0];
+
+  if (!user) {
+    throw new Error("USER_NOT_FOUND");
+  }
+
+  const balanceBefore = Number(user.balance);
+
+  if (balanceBefore < charge) {
+    throw new Error("INSUFFICIENT_BALANCE");
+  }
+
+  const balanceAfter = Number((balanceBefore - charge).toFixed(4));
+  await connection.execute("UPDATE users SET balance = ? WHERE id = ?", [balanceAfter, userId]);
+
+  return {
+    balanceBefore,
+    balanceAfter,
+  };
 }
 
 export const orderService = {
@@ -111,13 +149,45 @@ export const orderService = {
     }
 
     const charge = calculateOrderCharge(service.rate, input.quantity);
-    const [result] = await getMysqlPool().execute<ResultSetHeader>(
-      `INSERT INTO orders (user_id, service_id, link, quantity, charge, status)
-       VALUES (?, ?, ?, ?, ?, 'pending')`,
-      [input.userId, input.serviceId, input.link, input.quantity, charge],
-    );
+    const connection = await getMysqlPool().getConnection();
+    let orderId = 0;
 
-    const order = await this.findById(result.insertId, input.userId);
+    try {
+      await connection.beginTransaction();
+      const { balanceBefore, balanceAfter } = await debitUserBalanceForOrder(
+        connection,
+        input.userId,
+        charge,
+      );
+      const [result] = await connection.execute<ResultSetHeader>(
+        `INSERT INTO orders (user_id, service_id, link, quantity, charge, payment_status, status)
+         VALUES (?, ?, ?, ?, ?, 'paid', 'pending')`,
+        [input.userId, input.serviceId, input.link, input.quantity, charge],
+      );
+      orderId = result.insertId;
+
+      await connection.execute(
+        `INSERT INTO wallet_transactions
+          (user_id, type, amount, balance_before, balance_after, reference_type, reference_id, description)
+         VALUES (?, 'order_debit', ?, ?, ?, 'order', ?, ?)`,
+        [
+          input.userId,
+          -charge,
+          balanceBefore,
+          balanceAfter,
+          orderId,
+          `Order #${orderId}`,
+        ],
+      );
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+
+    const order = await this.findById(orderId, input.userId);
     if (!order) {
       throw new Error("ORDER_CREATE_FAILED");
     }

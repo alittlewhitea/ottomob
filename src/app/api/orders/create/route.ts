@@ -52,6 +52,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (error instanceof Error && error.message === "INSUFFICIENT_BALANCE") {
+      return NextResponse.json(
+        { message: "Insufficient balance. Please add funds before placing this order." },
+        { status: 402 },
+      );
+    }
+
     return NextResponse.json({ message: "Order creation failed." }, { status: 500 });
   }
 }

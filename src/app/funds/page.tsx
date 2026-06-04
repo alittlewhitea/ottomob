@@ -1,15 +1,25 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
+import { paymentService } from "@/modules/payments/payment.service";
 import { userService } from "@/modules/users/user.service";
+import { RechargeForm } from "./RechargeForm";
 
-export default async function FundsPage() {
+export default async function FundsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
   const sessionUser = await getCurrentUser();
 
   if (!sessionUser) {
     redirect("/login");
   }
 
-  const user = await userService.findById(sessionUser.id);
+  const [user, recharges, params] = await Promise.all([
+    userService.findById(sessionUser.id),
+    paymentService.listRechargesForUser(sessionUser.id),
+    searchParams,
+  ]);
 
   if (!user) {
     redirect("/login");
@@ -35,8 +45,8 @@ export default async function FundsPage() {
         <p className="eyebrow">Add funds</p>
         <h1>Recharge balance</h1>
         <p>
-          Payment connection is reserved for the next stage. This page is ready
-          for card, crypto, or third-party checkout providers.
+          Add balance with Stripe Checkout. Successful payments are credited by
+          Stripe webhook after the payment is confirmed.
         </p>
 
         <div className="accountTiles">
@@ -46,13 +56,59 @@ export default async function FundsPage() {
           </article>
           <article>
             <strong>Payment status</strong>
-            <span>Reserved</span>
+            <span>Stripe</span>
           </article>
           <article>
             <strong>Currency</strong>
             <span>USD</span>
           </article>
         </div>
+
+        {params.status === "success" && (
+          <p className="successNotice">
+            Stripe payment received. Balance updates after the webhook confirms it.
+          </p>
+        )}
+        {params.status === "cancelled" && (
+          <p className="formMessage">Checkout was cancelled. No funds were added.</p>
+        )}
+
+        <RechargeForm />
+      </section>
+
+      <section className="accountPanel ordersPanel">
+        <div className="panelTitleRow">
+          <div>
+            <p className="eyebrow">Payments</p>
+            <h2>Recent recharges</h2>
+          </div>
+        </div>
+
+        {recharges.length ? (
+          <div className="ordersTable rechargeTable">
+            <div className="ordersTableHead">
+              <span>ID</span>
+              <span>Amount</span>
+              <span>Provider</span>
+              <span>Status</span>
+              <span>Created</span>
+            </div>
+            {recharges.map((recharge) => (
+              <article className="orderRow" key={recharge.id}>
+                <span>#{recharge.id}</span>
+                <span>${recharge.amount.toFixed(2)}</span>
+                <span>{recharge.provider}</span>
+                <span className={`statusPill ${recharge.status}`}>{recharge.status}</span>
+                <span>{new Date(recharge.createdAt).toLocaleDateString()}</span>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="emptyOrders">
+            <strong>No recharges yet</strong>
+            <p>Your Stripe recharge history will appear here.</p>
+          </div>
+        )}
       </section>
     </main>
   );

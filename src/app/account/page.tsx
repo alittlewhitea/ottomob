@@ -88,7 +88,9 @@ export default async function AccountPage() {
                 </span>
                 <span>{order.quantity}</span>
                 <span>${order.charge.toFixed(4)}</span>
-                <span className={`statusPill ${order.status}`}>{order.status}</span>
+                <span className={`statusPill ${order.status}`}>
+                  {order.status} / {order.paymentStatus}
+                </span>
               </article>
             ))}
           </div>

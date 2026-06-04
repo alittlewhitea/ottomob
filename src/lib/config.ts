@@ -23,4 +23,9 @@ export const appConfig = {
       process.env.GOOGLE_REDIRECT_URI ??
       `${process.env.APP_URL ?? "http://localhost:3000"}/api/auth/google/callback`,
   },
+  stripe: {
+    secretKey: process.env.STRIPE_SECRET_KEY ?? "",
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
+    currency: process.env.STRIPE_CURRENCY ?? "usd",
+  },
 };

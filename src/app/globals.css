@@ -796,6 +796,11 @@ button {
   color: #7a5600;
 }
 
+.statusPill.paid {
+  background: #dbf8e8;
+  color: #17643a;
+}
+
 .statusPill.processing {
   background: #dff0ff;
   color: #145b8f;
@@ -808,6 +813,7 @@ button {
 
 .statusPill.partial,
 .statusPill.canceled,
+.statusPill.cancelled,
 .statusPill.failed {
   background: #ffe4e4;
   color: #8e2222;
@@ -978,6 +984,61 @@ button {
 
 .orderEstimate strong {
   font-size: 28px;
+}
+
+.rechargeForm {
+  display: grid;
+  gap: 18px;
+  margin-top: 28px;
+  max-width: 460px;
+}
+
+.quickAmounts {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.quickAmounts button {
+  background: #f5f9ff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 900;
+  min-height: 50px;
+}
+
+.quickAmounts button.active {
+  background: var(--yellow);
+  border-color: var(--yellow-deep);
+}
+
+.rechargeForm label {
+  display: grid;
+  font-size: 15px;
+  font-weight: 900;
+  gap: 8px;
+}
+
+.rechargeForm input {
+  background: #f9fbff;
+  border: 1px solid #dce5f2;
+  border-radius: 10px;
+  color: var(--navy);
+  font-size: 17px;
+  min-height: 50px;
+  padding: 0 14px;
+}
+
+.successNotice {
+  background: #dbf8e8;
+  border: 1px solid #82d8a7;
+  border-radius: 8px;
+  color: #17643a;
+  font-weight: 800;
+  margin: 24px 0 0;
+  padding: 13px 14px;
 }
 
 @media (max-width: 1080px) {
@@ -1169,5 +1230,9 @@ button {
 
   .orderRow {
     grid-template-columns: 1fr;
+  }
+
+  .quickAmounts {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
