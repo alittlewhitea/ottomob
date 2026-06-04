@@ -186,12 +186,28 @@ curl -X POST https://你的域名/api/services/sync \
 同步规则：
 
 - 只识别 Instagram、TikTok、YouTube、Facebook、Telegram、Twitter/X
+- 只保留 AmazingSMM category 中包含 `With Guarantee` 的服务
+- 只保留服务名称中包含 `⭐`、`★` 或 `Recommended` 的服务
 - 每个平台的每个品类只保留 rate 最低的一个服务
 - Followers/Members/Subscribers 最低购买量为 500，步进 500
 - Views/Impressions 最低购买量为 500，步进 500
 - Likes 最低购买量为 100，步进 100
 - Comments 最低购买量为 10，步进 10
 - 服务最大购买量小于最低购买量时会跳过
+- 每次成功同步到推荐保障服务后，旧的 active 服务会被置为 inactive
+
+### 前台套餐定价
+
+前台展示和扣款使用 OttoMob 自己的套餐价格，供应商下单仍使用筛选出的 AmazingSMM 服务。
+
+当前 followers / members / subscribers 套餐：
+
+```text
+500  = $4.99
+1000 = $7.99
+```
+
+如果服务最低购买量高于某个套餐数量，该套餐不会在详情页显示。
 
 同步后的前台目录接口：
 

@@ -2,16 +2,21 @@
 
 import { useMemo, useState } from "react";
 import type { SmmService } from "@/modules/services/catalog.service";
+import {
+  calculatePublicCharge,
+  getPriceTiersForService,
+} from "@/modules/services/pricing.service";
 
 export function OrderForm({ service }: { service: SmmService }) {
+  const priceTiers = getPriceTiersForService(service);
   const [link, setLink] = useState("");
-  const [quantity, setQuantity] = useState(service.minQuantity);
+  const [quantity, setQuantity] = useState(priceTiers[0]?.quantity ?? service.minQuantity);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   const charge = useMemo(
-    () => ((service.rate * quantity) / 1000).toFixed(4),
-    [quantity, service.rate],
+    () => calculatePublicCharge(service, quantity).toFixed(4),
+    [quantity, service],
   );
 
   async function submitOrder(event: React.FormEvent<HTMLFormElement>) {
@@ -59,19 +64,37 @@ export function OrderForm({ service }: { service: SmmService }) {
         />
       </label>
 
-      <label>
-        Quantity
-        <input
-          max={service.maxQuantity}
-          min={service.minQuantity}
-          name="quantity"
-          onChange={(event) => setQuantity(Number(event.target.value))}
-          required
-          step={service.quantityStep}
-          type="number"
-          value={quantity}
-        />
-      </label>
+      {priceTiers.length ? (
+        <label>
+          Package
+          <select
+            name="quantity"
+            onChange={(event) => setQuantity(Number(event.target.value))}
+            required
+            value={quantity}
+          >
+            {priceTiers.map((tier) => (
+              <option key={tier.quantity} value={tier.quantity}>
+                {tier.label} for ${tier.price.toFixed(2)}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <label>
+          Quantity
+          <input
+            max={service.maxQuantity}
+            min={service.minQuantity}
+            name="quantity"
+            onChange={(event) => setQuantity(Number(event.target.value))}
+            required
+            step={service.quantityStep}
+            type="number"
+            value={quantity}
+          />
+        </label>
+      )}
 
       <div className="quantityHints">
         <span>Min {service.minQuantity}</span>

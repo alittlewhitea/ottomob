@@ -75,6 +75,13 @@ const categoryMatchers = [
   { slug: "impressions", name: "Impressions", pattern: /\b(impressions|reach)\b/i, min: 500 },
 ];
 
+function isPreferredGuaranteedService(service: AmazingSmmService) {
+  return (
+    service.category.toLowerCase().includes("with guarantee") &&
+    /⭐|★|recommended/i.test(service.name)
+  );
+}
+
 function mapService(row: ServiceRow): SmmService {
   return {
     id: row.id,
@@ -113,6 +120,10 @@ export function selectLowestPricedServices(rawServices: AmazingSmmService[]) {
   const selected = new Map<string, SelectedService>();
 
   for (const raw of rawServices) {
+    if (!isPreferredGuaranteedService(raw)) {
+      continue;
+    }
+
     const platform = detectPlatform(raw);
     const category = detectCategory(raw);
     const rate = Number(raw.rate);
@@ -193,6 +204,10 @@ export const catalogService = {
     const selectedServices = selectLowestPricedServices(rawServices);
     const pool = getMysqlPool();
     let upserted = 0;
+
+    if (selectedServices.length) {
+      await pool.execute("UPDATE services SET is_active = 0");
+    }
 
     for (const service of selectedServices) {
       const [categoryResult] = await pool.execute<ResultSetHeader>(

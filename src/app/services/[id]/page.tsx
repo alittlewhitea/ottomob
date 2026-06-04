@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { ArrowLeft, BadgeCheck, Clock3, ShieldCheck } from "lucide-react";
 import { catalogService } from "@/modules/services/catalog.service";
+import { getPublicStartingPrice, getPriceTiersForService } from "@/modules/services/pricing.service";
 import { OrderForm } from "./OrderForm";
 
 export default async function ServiceDetailPage({
@@ -20,6 +21,8 @@ export default async function ServiceDetailPage({
   if (!service) {
     notFound();
   }
+
+  const priceTiers = getPriceTiersForService(service);
 
   return (
     <main className="serviceDetailPage">
@@ -43,14 +46,14 @@ export default async function ServiceDetailPage({
           <p className="eyebrow">{service.platform}</p>
           <h1>{service.name}</h1>
           <p>
-            Create a local pending order first. Payment, balance deduction, and
-            supplier submission will be connected in the next stage.
+            Choose a fixed OttoMob package. We route orders to selected
+            guaranteed supplier services that are marked as recommended.
           </p>
 
           <div className="serviceStats">
             <article>
-              <strong>${service.rate.toFixed(4)}</strong>
-              <span>per 1,000 units</span>
+              <strong>${getPublicStartingPrice(service).toFixed(2)}</strong>
+              <span>starting price</span>
             </article>
             <article>
               <strong>{service.minQuantity}</strong>
@@ -61,6 +64,16 @@ export default async function ServiceDetailPage({
               <span>quantity step</span>
             </article>
           </div>
+
+          {priceTiers.length > 0 && (
+            <div className="packagePreview">
+              {priceTiers.map((tier) => (
+                <span key={tier.quantity}>
+                  {tier.label}: ${tier.price.toFixed(2)}
+                </span>
+              ))}
+            </div>
+          )}
 
           <div className="serviceTrustList">
             <span>

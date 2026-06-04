@@ -11,6 +11,7 @@ import {
   ThumbsUp,
   Users,
 } from "lucide-react";
+import { getPublicStartingPrice } from "@/modules/services/pricing.service";
 
 type Service = {
   id: number;
@@ -85,7 +86,7 @@ export function ServiceBrowser({ initialServices }: { initialServices: Service[]
               <Icon size={28} />
               <span>{service.name}</span>
               <small>
-                from ${service.rate.toFixed(2)} / min {service.minQuantity}
+                from ${getPublicStartingPrice(service).toFixed(2)} / min {service.minQuantity}
               </small>
             </a>
           );

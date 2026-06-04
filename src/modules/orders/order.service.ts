@@ -3,6 +3,10 @@ import { amazingSmmApi } from "@/lib/api/amazingSmm";
 import { appConfig } from "@/lib/config";
 import { getMysqlPool } from "@/lib/db/mysql";
 import { catalogService } from "@/modules/services/catalog.service";
+import {
+  calculatePublicCharge,
+  isValidPublicQuantity,
+} from "@/modules/services/pricing.service";
 
 export type OrderStatus = "pending" | "processing" | "completed" | "partial" | "canceled" | "failed";
 
@@ -128,10 +132,6 @@ export function calculateOrderCharge(rate: number, quantity: number) {
   return Number(((rate * quantity) / 1000).toFixed(4));
 }
 
-function isValidQuantity(quantity: number, min: number, max: number, step: number) {
-  return quantity >= min && quantity <= max && (quantity - min) % step === 0;
-}
-
 async function debitUserBalanceForOrder(
   connection: PoolConnection,
   userId: number,
@@ -212,18 +212,11 @@ export const orderService = {
       throw new Error("SERVICE_NOT_ORDERABLE");
     }
 
-    if (
-      !isValidQuantity(
-        input.quantity,
-        service.minQuantity,
-        service.maxQuantity,
-        service.quantityStep,
-      )
-    ) {
+    if (!isValidPublicQuantity(service, input.quantity)) {
       throw new Error("INVALID_QUANTITY");
     }
 
-    const charge = calculateOrderCharge(service.rate, input.quantity);
+    const charge = calculatePublicCharge(service, input.quantity);
     const connection = await getMysqlPool().getConnection();
     let orderId = 0;
 
