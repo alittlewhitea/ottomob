@@ -18,6 +18,14 @@ export type AmazingSmmService = {
   cancel: boolean;
 };
 
+export type AmazingSmmCreateOrderResponse =
+  | {
+      order: number;
+    }
+  | {
+      error: string;
+    };
+
 async function requestAmazingSmm<T>(
   action: AmazingSmmAction,
   payload: Record<string, string | number> = {},
@@ -49,8 +57,8 @@ async function requestAmazingSmm<T>(
 
 export const amazingSmmApi = {
   listServices: () => requestAmazingSmm<AmazingSmmService[]>("services"),
-  createOrder: <T>(serviceId: number, link: string, quantity: number) =>
-    requestAmazingSmm<T>("add", { service: serviceId, link, quantity }),
+  createOrder: (serviceId: number, link: string, quantity: number) =>
+    requestAmazingSmm<AmazingSmmCreateOrderResponse>("add", { service: serviceId, link, quantity }),
   getOrderStatus: <T>(orderId: number) => requestAmazingSmm<T>("status", { order: orderId }),
   getBalance: <T>() => requestAmazingSmm<T>("balance"),
 };

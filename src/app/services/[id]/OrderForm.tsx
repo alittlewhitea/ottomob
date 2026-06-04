@@ -92,7 +92,7 @@ export function OrderForm({ service }: { service: SmmService }) {
       )}
 
       <button className="primaryCta compact" disabled={loading} type="submit">
-        {loading ? "Creating order" : "Create Pending Order"}
+        {loading ? "Submitting order" : "Place Order"}
       </button>
     </form>
   );

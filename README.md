@@ -117,6 +117,29 @@ mysql -u 数据库用户 -p 数据库名 < database/migrations/2026-06-04-stripe
 - `recharges`
 - `wallet_transactions`
 
+## 第五阶段功能
+
+已接入 AmazingSMM 真实下单。
+
+当前真实订单流程：
+
+1. 用户在服务详情页输入链接和数量。
+2. 系统按服务价格计算订单金额。
+3. 检查用户余额。
+4. 余额足够则扣款并创建本地订单。
+5. 系统调用 AmazingSMM `add` 接口创建供应商订单。
+6. 成功后保存 `external_order_id`，本地订单状态更新为 `processing / paid`。
+7. 如果供应商接口失败或未配置 API key，系统自动退款到用户余额，并将订单标记为 `failed / refunded`。
+
+上线前必须配置：
+
+```env
+AMAZINGSMM_API_URL=https://amazingsmm.com/api/v2
+AMAZINGSMM_API_KEY=your_real_api_key
+```
+
+第五阶段暂未做订单状态同步。后续会调用 AmazingSMM `status` 接口，将本地订单更新为 completed、partial、canceled 等状态。
+
 ### MySQL 初始化
 
 在宝塔 MySQL 中创建数据库和用户后，导入：

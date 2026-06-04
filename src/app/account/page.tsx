@@ -81,7 +81,10 @@ export default async function AccountPage() {
             </div>
             {orders.map((order) => (
               <article className="orderRow" key={order.id}>
-                <span>#{order.id}</span>
+                <span>
+                  #{order.id}
+                  {order.externalOrderId && <small>Supplier #{order.externalOrderId}</small>}
+                </span>
                 <span>
                   <b>{order.serviceName}</b>
                   <small>{order.platform}</small>

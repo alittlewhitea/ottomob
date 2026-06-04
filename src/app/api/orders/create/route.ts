@@ -59,6 +59,20 @@ export async function POST(request: Request) {
       );
     }
 
+    if (error instanceof Error && error.message === "SUPPLIER_NOT_CONFIGURED") {
+      return NextResponse.json(
+        { message: "Supplier API is not configured. Your balance was refunded." },
+        { status: 503 },
+      );
+    }
+
+    if (error instanceof Error && error.message === "SUPPLIER_ORDER_FAILED") {
+      return NextResponse.json(
+        { message: "Supplier order failed. Your balance was refunded automatically." },
+        { status: 502 },
+      );
+    }
+
     return NextResponse.json({ message: "Order creation failed." }, { status: 500 });
   }
 }
