@@ -75,10 +75,10 @@ const categoryMatchers = [
   { slug: "impressions", name: "Impressions", pattern: /\b(impressions|reach)\b/i, min: 500 },
 ];
 
-function isPreferredGuaranteedService(service: AmazingSmmService) {
+function hasSupplierStarBadge(service: AmazingSmmService) {
   return (
     service.category.toLowerCase().includes("with guarantee") &&
-    /⭐|★|recommended/i.test(service.name)
+    service.name.includes("\u2b50")
   );
 }
 
@@ -120,7 +120,7 @@ export function selectLowestPricedServices(rawServices: AmazingSmmService[]) {
   const selected = new Map<string, SelectedService>();
 
   for (const raw of rawServices) {
-    if (!isPreferredGuaranteedService(raw)) {
+    if (!hasSupplierStarBadge(raw)) {
       continue;
     }
 

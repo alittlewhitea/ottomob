@@ -187,7 +187,7 @@ curl -X POST https://你的域名/api/services/sync \
 
 - 只识别 Instagram、TikTok、YouTube、Facebook、Telegram、Twitter/X
 - 只保留 AmazingSMM category 中包含 `With Guarantee` 的服务
-- 只保留服务名称中包含 `⭐`、`★` 或 `Recommended` 的服务
+- 只保留服务名称中包含 `⭐` 的服务
 - 每个平台的每个品类只保留 rate 最低的一个服务
 - Followers/Members/Subscribers 最低购买量为 500，步进 500
 - Views/Impressions 最低购买量为 500，步进 500
