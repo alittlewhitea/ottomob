@@ -6,20 +6,26 @@ export type PriceTier = {
   label: string;
 };
 
+const PUBLIC_PRICE_MARKUP = 1.5;
+
 const priceTierRules: Array<{
   pattern: RegExp;
-  tiers: PriceTier[];
+  tiers: Array<Omit<PriceTier, "price">>;
 }> = [
   {
     pattern: /\b(followers|members|subscribers)\b/i,
     tiers: [
-      { quantity: 500, price: 4.99, label: "500" },
-      { quantity: 1000, price: 7.99, label: "1,000" },
+      { quantity: 500, label: "500" },
+      { quantity: 1000, label: "1,000" },
     ],
   },
 ];
 
-export function getPriceTiersForService(service: Pick<SmmService, "name" | "minQuantity" | "maxQuantity">) {
+function calculateMarkedUpCharge(rate: number, quantity: number) {
+  return Number((((rate * quantity) / 1000) * PUBLIC_PRICE_MARKUP).toFixed(4));
+}
+
+export function getPriceTiersForService(service: Pick<SmmService, "name" | "rate" | "minQuantity" | "maxQuantity">) {
   const rule = priceTierRules.find((item) => item.pattern.test(service.name));
 
   if (!rule) {
@@ -28,7 +34,10 @@ export function getPriceTiersForService(service: Pick<SmmService, "name" | "minQ
 
   return rule.tiers.filter(
     (tier) => tier.quantity >= service.minQuantity && tier.quantity <= service.maxQuantity,
-  );
+  ).map((tier) => ({
+    ...tier,
+    price: calculateMarkedUpCharge(service.rate, tier.quantity),
+  }));
 }
 
 export function getPublicStartingPrice(service: Pick<SmmService, "name" | "rate" | "minQuantity" | "maxQuantity">) {
@@ -38,7 +47,7 @@ export function getPublicStartingPrice(service: Pick<SmmService, "name" | "rate"
     return Math.min(...tiers.map((tier) => tier.price));
   }
 
-  return Number(((service.rate * service.minQuantity) / 1000).toFixed(4));
+  return calculateMarkedUpCharge(service.rate, service.minQuantity);
 }
 
 export function calculatePublicCharge(
@@ -51,11 +60,11 @@ export function calculatePublicCharge(
     return tier.price;
   }
 
-  return Number(((service.rate * quantity) / 1000).toFixed(4));
+  return calculateMarkedUpCharge(service.rate, quantity);
 }
 
 export function isValidPublicQuantity(
-  service: Pick<SmmService, "name" | "minQuantity" | "maxQuantity" | "quantityStep">,
+  service: Pick<SmmService, "name" | "rate" | "minQuantity" | "maxQuantity" | "quantityStep">,
   quantity: number,
 ) {
   const tiers = getPriceTiersForService(service);

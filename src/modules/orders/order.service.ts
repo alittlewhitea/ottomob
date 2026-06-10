@@ -128,10 +128,6 @@ async function refundFailedSupplierOrder(
   }
 }
 
-export function calculateOrderCharge(rate: number, quantity: number) {
-  return Number(((rate * quantity) / 1000).toFixed(4));
-}
-
 async function debitUserBalanceForOrder(
   connection: PoolConnection,
   userId: number,
