@@ -12,8 +12,9 @@ export type AmazingSmmService = {
   type: string;
   category: string;
   rate: string;
-  min: string;
-  max: string;
+  min: string | number;
+  max: string | number;
+  dripfeed?: boolean;
   refill: boolean;
   cancel: boolean;
 };

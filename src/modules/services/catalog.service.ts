@@ -75,9 +75,9 @@ const categoryMatchers = [
   { slug: "impressions", name: "Impressions", pattern: /\b(impressions|reach)\b/i, min: 500 },
 ];
 
-function hasSupplierStarBadge(service: AmazingSmmService) {
+function isGuaranteedRecommendedService(service: AmazingSmmService) {
   return (
-    service.category.toLowerCase().includes("with guarantee") &&
+    /with\s+guarantee/i.test(service.category) &&
     service.name.includes("\u2b50")
   );
 }
@@ -113,14 +113,20 @@ function toSlug(value: string) {
   return value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/^-|-$/g, "")
+    .slice(0, 120)
+    .replace(/-$/g, "");
+}
+
+function normalizeSupplierCategory(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 export function selectLowestPricedServices(rawServices: AmazingSmmService[]) {
   const selected = new Map<string, SelectedService>();
 
   for (const raw of rawServices) {
-    if (!hasSupplierStarBadge(raw)) {
+    if (!isGuaranteedRecommendedService(raw)) {
       continue;
     }
 
@@ -140,12 +146,13 @@ export function selectLowestPricedServices(rawServices: AmazingSmmService[]) {
       continue;
     }
 
-    const categorySlug = `${toSlug(platform)}-${category.slug}`;
-    const key = `${platform}:${category.slug}`;
+    const supplierCategory = raw.category.trim();
+    const categorySlug = toSlug(supplierCategory);
+    const key = normalizeSupplierCategory(supplierCategory);
     const candidate: SelectedService = {
       externalServiceId: Number(raw.service),
       categorySlug,
-      categoryName: `${platform} ${category.name}`,
+      categoryName: supplierCategory,
       platform,
       name: raw.name,
       serviceType: raw.type,
