@@ -115,12 +115,12 @@ function toSlug(value: string) {
     .replace(/-$/g, "");
 }
 
-function normalizeSupplierCategory(value: string) {
-  return value.trim().replace(/\s+/g, " ").toLowerCase();
+function getCategoryNameFromServiceName(name: string) {
+  return name.split("~")[0]?.trim().replace(/\s+/g, " ") || "Recommended Services";
 }
 
-export function selectLowestPricedServices(rawServices: AmazingSmmService[]) {
-  const selected = new Map<string, SelectedService>();
+export function selectRecommendedServices(rawServices: AmazingSmmService[]) {
+  const selected: SelectedService[] = [];
 
   for (const raw of rawServices) {
     if (!isRecommendedService(raw)) {
@@ -143,13 +143,13 @@ export function selectLowestPricedServices(rawServices: AmazingSmmService[]) {
       continue;
     }
 
-    const supplierCategory = raw.category.trim();
-    const categorySlug = toSlug(supplierCategory);
-    const key = normalizeSupplierCategory(supplierCategory);
-    const candidate: SelectedService = {
+    const categoryName = getCategoryNameFromServiceName(raw.name);
+    const categorySlug = toSlug(`${platform}-${categoryName}`);
+
+    selected.push({
       externalServiceId: Number(raw.service),
       categorySlug,
-      categoryName: supplierCategory,
+      categoryName,
       platform,
       name: raw.name,
       serviceType: raw.type,
@@ -160,15 +160,10 @@ export function selectLowestPricedServices(rawServices: AmazingSmmService[]) {
       refillSupported: Boolean(raw.refill),
       cancelSupported: Boolean(raw.cancel),
       raw,
-    };
-    const existing = selected.get(key);
-
-    if (!existing || candidate.rate < existing.rate) {
-      selected.set(key, candidate);
-    }
+    });
   }
 
-  return Array.from(selected.values()).sort((a, b) =>
+  return selected.sort((a, b) =>
     `${a.platform} ${a.categoryName}`.localeCompare(`${b.platform} ${b.categoryName}`),
   );
 }
@@ -205,7 +200,7 @@ export const catalogService = {
 
   async syncFromAmazingSmm() {
     const rawServices = await amazingSmmApi.listServices();
-    const selectedServices = selectLowestPricedServices(rawServices);
+    const selectedServices = selectRecommendedServices(rawServices);
     const pool = getMysqlPool();
     let upserted = 0;
 
